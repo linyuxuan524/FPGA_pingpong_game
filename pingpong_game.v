@@ -1,10 +1,10 @@
 module pingpong_game #(
-    parameter integer BALL_STEP_CYCLES = 3_000_000,
-    parameter integer DEBOUNCE_CYCLES  = 500_000,
-    parameter integer BEEP_CYCLES      = 5_000_000,
-    parameter integer HOLD_UNIT_CYCLES = 2_000_000,
+    parameter integer BALL_STEP_CYCLES = 3_000_000, //球移动一步所需的时钟周期数，决定基础速度
+    parameter integer DEBOUNCE_CYCLES  = 500_000, //按键消抖计数周期
+    parameter integer BEEP_CYCLES      = 5_000_000, //蜂鸣器响持续时间
+    parameter integer HOLD_UNIT_CYCLES = 2_000_000, //按键按住时间单位，用于计算速度等级
     parameter integer SPEED_LEVEL_MAX  = 7,
-    parameter integer MIN_CROSS_COUNT  = 4
+    parameter integer MIN_CROSS_COUNT  = 4 //最低速时球必须移动的最小次数，否则不过线
 )(
     input  wire        clk,
     input  wire        rst_n,
@@ -21,11 +21,11 @@ module pingpong_game #(
     wire [31:0] hold_cycles_left;
     wire [31:0] hold_cycles_right;
 
-    reg         running;
+    reg         running; //游戏运行状态，1表示游戏中，0表示等待发球
     reg         dir;
     reg [2:0]   ball_pos;
     reg [3:0]   speed_level;
-    reg [3:0]   travel_count;
+    reg [3:0]   travel_count; //上次击球后球移动的步数
     reg [31:0]  step_cnt;
     reg [31:0]  beep_cnt;
     reg         beep_start;
@@ -44,7 +44,7 @@ module pingpong_game #(
         end
     endfunction
 
-    function [3:0] hold_to_speed;
+    function [3:0] hold_to_speed; //将按住的周期数转换为速度等级
         input [31:0] hold_cycles_in;
         reg   [31:0] q;
         begin
@@ -60,10 +60,10 @@ module pingpong_game #(
         end
     endfunction
 
-    function [31:0] speed_to_step_cycles;
+    function [31:0] speed_to_step_cycles; //将速度等级转换为步进所需的时钟周期数
         input [3:0] spd;
         reg   [31:0] factor;
-        begin
+        begin //速度越快，因子越小，步进周期越短，球移动越快
             if (spd >= SPEED_LEVEL_MAX)
                 factor = 32'd1;
             else if (spd <= 4'd1)
@@ -107,8 +107,9 @@ module pingpong_game #(
         end else if (step_restart) begin
             step_cnt <= 32'd0;
         end else if (step_tick) begin
+        //step tick在running=1且step_cnt >= current_step_cycles - 1时产生，表示球应移动一格
             step_cnt <= 32'd0;
-        end else begin
+        end else begin //否则每个时钟加1
             step_cnt <= step_cnt + 1'b1;
         end
     end
@@ -147,8 +148,8 @@ module pingpong_game #(
 
                 if (flag_left) begin
                     running      <= 1'b1;
-                    dir          <= 1'b1;
-                    ball_pos     <= 3'd0;
+                    dir          <= 1'b1; //方向向右
+                    ball_pos     <= 3'd0; //球在左端(0)
                     speed_level  <= hold_to_speed(hold_cycles_left);
                     travel_count <= 4'd0;
                     step_restart <= 1'b1;
@@ -173,7 +174,7 @@ module pingpong_game #(
                         speed_level  <= hold_to_speed(hold_cycles_right);
                         travel_count <= 4'd0;
                         step_restart <= 1'b1;
-                    end else begin
+                    end else begin //否则提前击球，左侧玩家得分，游戏停止，蜂鸣器响
                         score1       <= score_inc_sat(score1);
                         running      <= 1'b0;
                         speed_level  <= 4'd1;
@@ -194,10 +195,10 @@ module pingpong_game #(
                         travel_count <= 4'd0;
                         beep_start   <= 1'b1;
                     end
-                end else if (step_tick) begin
+                end else if (step_tick) begin //步进事件
                     if (dir) begin
                         if (ball_pos < 3'd7) begin
-                            ball_pos <= ball_pos + 1'b1;
+                            ball_pos <= ball_pos + 1'b1; //球的位置加一
 
                             if ((speed_level <= 4'd1) && ((travel_count + 1'b1) < MIN_CROSS_COUNT)) begin
                                 score2       <= score_inc_sat(score2);
@@ -205,7 +206,7 @@ module pingpong_game #(
                                 speed_level  <= 4'd1;
                                 travel_count <= 4'd0;
                                 beep_start   <= 1'b1;
-                            end else begin
+                            end else begin //否则travel_count加一，若速度大于一则速度减一
                                 travel_count <= travel_count + 1'b1;
                                 if (speed_level > 4'd1)
                                     speed_level <= speed_level - 1'b1;
