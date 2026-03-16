@@ -9,7 +9,7 @@ module tb_pingpong_game;
     wire [6:0]  score1;
     wire [6:0]  score2;
     wire        beep;
-    wire [41:0] seven_segment;
+    wire [13:0] seven_segment;
 
     localparam integer BALL_STEP_CYCLES = 3;
     localparam integer DEBOUNCE_CYCLES  = 2;
