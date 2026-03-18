@@ -1,5 +1,5 @@
 module seven_tube_drive #(
-    parameter integer CLK_FREQ_HZ   = 50_000_000,
+    parameter integer CLK_FREQ_HZ   = 100_000_000,
     parameter integer SHIFT_TICK_HZ = 200_000
 )(
     input  wire       clk,
@@ -11,7 +11,7 @@ module seven_tube_drive #(
     output reg        RCK,
     output reg        SCK,
     output wire       seg_oe_n,   // 对应 595OE，低有效
-    output wire       dig_oe_n    // 数码位使能，先按低有效处理
+    output wire       dig_oe_n    // 数码位使能
 );
 
     // ----------------------------
@@ -97,7 +97,7 @@ module seven_tube_drive #(
     reg [6:0]  bit_cnt;
 
     assign seg_oe_n = 1'b0; // 595OE 低有效，常开
-    assign dig_oe_n = 1'b0; // 若板上位使能也是低有效，这样常开；若显示全灭可改成 1'b1 试验
+    assign dig_oe_n = 1'b1; 
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -185,11 +185,7 @@ module seg7_cc_encoder (
             4'h8: seg = 8'b11111110;
             4'h9: seg = 8'b11110110;
             4'hA: seg = 8'b00000010; // 只亮 g 段，显示 '-'
-            4'hB: seg = 8'b00111110;
-            4'hC: seg = 8'b10011100;
-            4'hD: seg = 8'b01111010;
-            4'hE: seg = 8'b10011110;
-            4'hF: seg = 8'b00000000; // 空白
+            4'hF: seg = 8'b00000000;
             default: seg = 8'b00000000;
         endcase
     end

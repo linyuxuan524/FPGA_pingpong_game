@@ -1,7 +1,7 @@
 module pingpong_game #(
     parameter integer BALL_STEP_CYCLES = 3_000_000, //球移动一步所需的时钟周期数，决定基础速度
     parameter integer DEBOUNCE_CYCLES  = 500_000,   //按键消抖计数周期
-    parameter integer BEEP_CYCLES      = 5_000_000, //蜂鸣器响持续时间
+    parameter integer BEEP_CYCLES      = 50_000_000, //蜂鸣器响持续时间
     parameter integer HOLD_UNIT_CYCLES = 2_000_000, //按键按住时间单位，用于计算速度等级
     parameter integer SPEED_LEVEL_MAX  = 7,
     parameter integer MIN_CROSS_COUNT  = 4          //最低速时球必须移动的最小次数，否则不过线
@@ -47,8 +47,8 @@ module pingpong_game #(
     function [6:0] score_inc_sat;
         input [6:0] score_in;
         begin
-            if (score_in < 7'd9)
-                score_inc_sat = score_in + 1'b1;
+            if (score_in < 7'd11)
+                score_inc_sat = score_in + 7'd1;
             else
                 score_inc_sat = score_in;
         end
